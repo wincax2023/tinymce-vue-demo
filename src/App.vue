@@ -39,7 +39,7 @@
 
  <script>
 import { mapActions } from "vuex";
-import TinymceInput from './components/TinymceTextarea.vue';
+import TinymceInput from './components/TinymceInput.vue';
 
  export default {
    name: 'app',

@@ -120,26 +120,15 @@ export default {
       editor.on("change input", () => {
         this.handleUpdate(editor.getContent({ format: 'text' }));
       });
-      editor.on('keydown', function (e) {
-            if (allowedKeys.indexOf(e.keyCode) != -1) return true;
+      editor.on('keydown KeyUp Undo Redo', (e) => {
+        if (allowedKeys.indexOf(e.keyCode) != -1) return true;
             if (editor.getContent({ format: "text" }).length + 1 > this.maxlength) {
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
             }
             return true;
-        });
-        editor.on('keyup', function (e) {
-            if (allowedKeys.indexOf(e.keyCode) != -1) return true;
-            if (editor.getContent({ format: "text" }).length + 1 > this.maxlength) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-            const value = editor.getContent({ format: "text" })
-            this.parsedValue = value.slice(0, this.maxlength);
-            return true;
-        });
+        })
     },
 
     handleUpdate(value) {
@@ -151,7 +140,7 @@ export default {
         //   setEditorText(value);
         this.$emit("input", { value, id: this.id });
       } else {
-        this.parsedValue = value.slice(0, this.maxlength);
+        this.parsedValue = value.substring(0, this.maxlength);
       }
     },
 
@@ -191,14 +180,21 @@ export default {
 
     insertText(insertText) {
       if (insertText && this.editor) {
+        const length = this.editor.getContent({ format: "text" }).length;
+        if (length + insertText.length > this.maxlength) {
+          return
+        }
         this.editor.execCommand("mceInsertContent", false, insertText);
       }
     },
 
     insertKeyword(insertText) {
       if (insertText && this.editor) {
+        const length = this.editor.getContent({ format: "text" }).length;
+        if (length + insertText.length > this.maxlength) {
+          return
+        }
         let tag = this.formatTag(insertText);
-        console.log("insertText", tag);
         this.editor.execCommand("mceInsertContent", false, tag);
       }
     },
