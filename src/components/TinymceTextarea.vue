@@ -5,7 +5,6 @@
     @onInit="handleInit"
     :value="parsedValue"
     :init="config"
-    @onBeforeAddUndo="handleBeforeAddUndo"
     ref="zcoInput"
   />
 </template>
@@ -36,7 +35,6 @@ const config = {
   skin: false,
   content_css: false,
   content_style: contentUiCss.toString() + "\n" + contentCss.toString(),
-
 };
 
 window.tinymce = tinymce;
@@ -95,7 +93,11 @@ export default {
   data() {
     return {
       editor: null,
-      config: { ...config, placeholder: this.placeholder,   max_chars: this.maxlength},
+      config: {
+        ...config,
+        placeholder: this.placeholder,
+        max_chars: this.maxlength,
+      },
       parsedValue: "",
     };
   },
@@ -112,23 +114,25 @@ export default {
 
     handleInit(evt, editor) {
       console.log("handleInit", evt, editor);
-      var allowedKeys = [8, 13, 16, 17, 18, 20, 33, 34, 35, 36, 37, 38, 39, 40, 46];
+      var allowedKeys = [
+        8, 13, 16, 17, 18, 20, 33, 34, 35, 36, 37, 38, 39, 40, 46,
+      ];
       this.editor = editor;
       this.$nextTick(() => {
         this.parse(this.value);
       });
       editor.on("change input", () => {
-        this.handleUpdate(editor.getContent({ format: 'text' }));
+        this.handleUpdate(editor.getContent({ format: "text" }));
       });
-      editor.on('keydown KeyUp Undo Redo', (e) => {
+      editor.on("keydown KeyUp Undo Redo", (e) => {
         if (allowedKeys.indexOf(e.keyCode) != -1) return true;
-            if (editor.getContent({ format: "text" }).length + 1 > this.maxlength) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-            return true;
-        })
+        if (editor.getContent({ format: "text" }).length + 1 > this.maxlength) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+        return true;
+      });
     },
 
     handleUpdate(value) {
@@ -141,15 +145,6 @@ export default {
         this.$emit("input", { value, id: this.id });
       } else {
         this.parsedValue = value.substring(0, this.maxlength);
-      }
-    },
-
-    handleBeforeAddUndo(evt) {
-      const length = this.editor.getContent({ format: "text" }).length;
-      // note that this is the opposite test as in handleUpdate
-      // because we are determining when to deny adding an undo level
-      if (this.maxlength && length > this.maxlength) {
-        evt.preventDefault();
       }
     },
 
@@ -182,7 +177,7 @@ export default {
       if (insertText && this.editor) {
         const length = this.editor.getContent({ format: "text" }).length;
         if (length + insertText.length > this.maxlength) {
-          return
+          insertText = insertText.substring(0, this.maxlength - length);
         }
         this.editor.execCommand("mceInsertContent", false, insertText);
       }
@@ -192,7 +187,7 @@ export default {
       if (insertText && this.editor) {
         const length = this.editor.getContent({ format: "text" }).length;
         if (length + insertText.length > this.maxlength) {
-          return
+          return;
         }
         let tag = this.formatTag(insertText);
         this.editor.execCommand("mceInsertContent", false, tag);
@@ -253,7 +248,7 @@ export default {
   left: 15px;
 }
 .mce-content-body:focus {
-	border-color: #409eff !important;
-	outline: none;
+  border-color: #409eff !important;
+  outline: none;
 }
 </style>

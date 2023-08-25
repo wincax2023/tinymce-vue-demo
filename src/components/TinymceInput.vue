@@ -5,7 +5,6 @@
     @onInit="handleInit"
     :value="parsedValue"
     :init="config"
-    @onBeforeAddUndo="handleBeforeAddUndo"
     ref="zcoInput"
   />
 </template>
@@ -37,7 +36,7 @@ const config = {
   content_css: false,
   content_style: contentUiCss.toString() + "\n" + contentCss.toString(),
   nowrap: true,
-  force_root_block: '',
+  force_root_block: "",
 };
 
 window.tinymce = tinymce;
@@ -96,7 +95,11 @@ export default {
   data() {
     return {
       editor: null,
-      config: { ...config, placeholder: this.placeholder },
+      config: {
+        ...config,
+        placeholder: this.placeholder,
+        max_chars: this.maxlength,
+      },
       parsedValue: "",
     };
   },
@@ -110,15 +113,22 @@ export default {
     ...mapActions("variable", ["setInsertVariable"]),
 
     handleInit(evt, editor) {
+      var allowedKeys = [8, 16, 17, 18, 20, 33, 34, 35, 36, 37, 38, 39, 40, 46];
       this.editor = editor;
       this.$nextTick(() => {
         this.parse(this.value);
       });
       editor.on("change input", () => {
-        this.handleUpdate(editor.getContent({ format: 'text' }));
+        this.handleUpdate(editor.getContent({ format: "text" }));
       });
-      editor.on("keydown", function (e) {
-        return e.keyCode != 13;
+      editor.on("keydown KeyUp Undo Redo", (e) => {
+        if (allowedKeys.indexOf(e.keyCode) != -1) return true;
+        if (editor.getContent({ format: "text" }).length + 1 > this.maxlength) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+        return true;
       });
     },
 
@@ -130,15 +140,8 @@ export default {
       if (this.maxlength && length <= this.maxlength) {
         //   setEditorText(value);
         this.$emit("input", { value, id: this.id });
-      }
-    },
-
-    handleBeforeAddUndo(evt) {
-      const length = this.editor.getContent({ format: "text" }).length;
-      // note that this is the opposite test as in handleUpdate
-      // because we are determining when to deny adding an undo level
-      if (this.maxlength && length > this.maxlength) {
-        evt.preventDefault();
+      } else {
+        this.parsedValue = value.substring(0, this.maxlength);
       }
     },
 
@@ -169,12 +172,20 @@ export default {
 
     insertText(insertText) {
       if (insertText && this.editor) {
+        const length = this.editor.getContent({ format: "text" }).length;
+        if (length + insertText.length > this.maxlength) {
+          insertText = insertText.substring(0, this.maxlength - length);
+        }
         this.editor.execCommand("mceInsertContent", false, insertText);
       }
     },
 
     insertKeyword(insertText) {
       if (insertText && this.editor) {
+        const length = this.editor.getContent({ format: "text" }).length;
+        if (length + insertText.length > this.maxlength) {
+          return;
+        }
         let tag = this.formatTag(insertText);
         this.editor.execCommand("mceInsertContent", false, tag);
       }
