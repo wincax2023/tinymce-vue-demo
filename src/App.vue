@@ -54,7 +54,7 @@ import TinymceInput from './components/TinymceInput.vue';
         maxRows: 3
       },
       placeholder: '输入内容',
-      maxlength: 20,
+      maxlength: 2000,
       ids: ['textarea-1', 'textarea-2', 'textarea-3'],
       required: true,
       showDetail: false,
